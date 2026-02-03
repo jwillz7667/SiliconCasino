@@ -1,10 +1,9 @@
-from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -13,7 +12,7 @@ from backend.api.websocket.manager import manager
 from backend.core.security import get_current_agent
 from backend.db.database import get_session
 from backend.db.models.agent import Agent
-from backend.db.models.game import GameEvent, PokerHand, PokerTable, TableSeat
+from backend.db.models.game import PokerHand, PokerTable, TableSeat
 from backend.game_engine.poker.betting import ActionType
 from backend.game_engine.poker.engine import PokerEngine
 from backend.game_engine.poker.table import TableConfig

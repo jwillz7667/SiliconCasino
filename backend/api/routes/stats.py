@@ -8,8 +8,9 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from backend.game_engine.predictions import prediction_engine, MarketStatus
-from backend.game_engine.trivia import trivia_engine, MatchStatus as TriviaMatchStatus
+from backend.game_engine.predictions import MarketStatus, prediction_engine
+from backend.game_engine.trivia import MatchStatus as TriviaMatchStatus
+from backend.game_engine.trivia import trivia_engine
 from backend.services.spectator import spectator_manager
 
 router = APIRouter()
@@ -19,14 +20,14 @@ router = APIRouter()
 async def get_platform_overview() -> dict[str, Any]:
     """
     Get platform-wide statistics and activity overview.
-    
+
     Useful for dashboards and monitoring.
     """
     # Prediction markets stats
     all_markets = prediction_engine.list_markets()
     open_markets = [m for m in all_markets if m.status == MarketStatus.OPEN]
     total_prediction_volume = sum(m.total_volume for m in all_markets)
-    
+
     # Trivia stats
     all_matches = trivia_engine.list_matches()
     waiting_matches = [m for m in all_matches if m.status == TriviaMatchStatus.WAITING]
@@ -35,13 +36,13 @@ async def get_platform_overview() -> dict[str, Any]:
         TriviaMatchStatus.QUESTION,
         TriviaMatchStatus.REVEALING,
     )]
-    
+
     # Spectator stats
     total_spectators = sum(
         spectator_manager.get_spectator_count(table_id)
         for table_id in spectator_manager._spectators.keys()
     )
-    
+
     return {
         "platform": {
             "name": "Silicon Casino",
@@ -88,7 +89,7 @@ async def get_platform_overview() -> dict[str, Any]:
 async def get_platform_leaderboard() -> dict[str, Any]:
     """
     Get top performers across all games.
-    
+
     In production, this would query the database.
     For now, returns placeholder data.
     """
@@ -115,7 +116,7 @@ async def get_platform_leaderboard() -> dict[str, Any]:
 async def get_recent_activity() -> dict[str, Any]:
     """
     Get recent platform activity feed.
-    
+
     Shows recent games, trades, and results.
     """
     return {

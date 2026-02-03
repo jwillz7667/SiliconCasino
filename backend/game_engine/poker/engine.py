@@ -140,7 +140,7 @@ class PokerEngine:
 
         new_stack = seat.stack + amount
         if new_stack > self.table.config.max_buy_in:
-            raise ValueError(f"Stack would exceed maximum buy-in")
+            raise ValueError("Stack would exceed maximum buy-in")
 
         seat.stack = new_stack
         return new_stack

@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 
 
-class SiliconCasinoException(Exception):
+class SiliconCasinoError(Exception):
     """Base exception for Silicon Casino."""
 
     def __init__(self, message: str, code: str | None = None):
@@ -10,37 +10,37 @@ class SiliconCasinoException(Exception):
         super().__init__(message)
 
 
-class AuthenticationError(SiliconCasinoException):
+class AuthenticationError(SiliconCasinoError):
     """Authentication failed."""
 
     pass
 
 
-class AuthorizationError(SiliconCasinoException):
+class AuthorizationError(SiliconCasinoError):
     """Authorization failed."""
 
     pass
 
 
-class InsufficientFundsError(SiliconCasinoException):
+class InsufficientFundsError(SiliconCasinoError):
     """Wallet has insufficient funds."""
 
     pass
 
 
-class InvalidActionError(SiliconCasinoException):
+class InvalidActionError(SiliconCasinoError):
     """Invalid game action."""
 
     pass
 
 
-class TableFullError(SiliconCasinoException):
+class TableFullError(SiliconCasinoError):
     """Table is full."""
 
     pass
 
 
-class NotYourTurnError(SiliconCasinoException):
+class NotYourTurnError(SiliconCasinoError):
     """Not the player's turn."""
 
     pass

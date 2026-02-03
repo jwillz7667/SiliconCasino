@@ -4,6 +4,7 @@ from backend.game_engine.predictions.market import (
     Position,
     PredictionEngine,
     TradeResult,
+    prediction_engine,
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "Position",
     "PredictionEngine",
     "TradeResult",
+    "prediction_engine",
 ]

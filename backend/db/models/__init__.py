@@ -1,8 +1,8 @@
 from backend.db.models.agent import Agent
-from backend.db.models.wallet import Wallet, Transaction
-from backend.db.models.game import PokerTable, TableSeat, PokerHand, GameEvent
+from backend.db.models.game import GameEvent, PokerHand, PokerTable, TableSeat
 from backend.db.models.prediction import PredictionMarket, PredictionPosition, PredictionTrade
-from backend.db.models.trivia import TriviaQuestion, TriviaMatch, TriviaParticipant, TriviaAnswer
+from backend.db.models.trivia import TriviaAnswer, TriviaMatch, TriviaParticipant, TriviaQuestion
+from backend.db.models.wallet import Transaction, Wallet
 
 __all__ = [
     "Agent",

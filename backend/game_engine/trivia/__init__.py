@@ -1,15 +1,17 @@
 from backend.game_engine.trivia.engine import (
+    MatchResult,
+    MatchStatus,
     TriviaEngine,
     TriviaMatch,
     TriviaQuestion,
-    MatchStatus,
-    MatchResult,
+    trivia_engine,
 )
 
 __all__ = [
     "TriviaEngine",
     "TriviaMatch",
-    "TriviaQuestion", 
+    "TriviaQuestion",
     "MatchStatus",
     "MatchResult",
+    "trivia_engine",
 ]

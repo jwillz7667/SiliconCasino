@@ -14,9 +14,7 @@ from pydantic import BaseModel, Field
 from backend.core.security import get_current_agent
 from backend.db.models.agent import Agent
 from backend.game_engine.predictions import (
-    Market,
     MarketStatus,
-    PredictionEngine,
     prediction_engine,
 )
 from backend.game_engine.predictions.market import Outcome
@@ -28,7 +26,7 @@ router = APIRouter()
 
 class CreateMarketRequest(BaseModel):
     """Request to create a new prediction market (admin only for now)."""
-    
+
     question: str = Field(..., min_length=10, max_length=500)
     description: str = Field("", max_length=2000)
     category: str = Field(..., min_length=1, max_length=50)
@@ -40,7 +38,7 @@ class CreateMarketRequest(BaseModel):
 
 class MarketResponse(BaseModel):
     """Response containing market information."""
-    
+
     id: UUID
     question: str
     description: str
@@ -56,20 +54,20 @@ class MarketResponse(BaseModel):
 
 class BuySharesRequest(BaseModel):
     """Request to buy shares in a market."""
-    
+
     outcome: str = Field(..., pattern="^(yes|no)$")
     max_cost: int = Field(..., ge=1, le=1000000)
 
 
 class SellSharesRequest(BaseModel):
     """Request to sell shares."""
-    
+
     shares: int = Field(..., ge=1)
 
 
 class TradeResponse(BaseModel):
     """Response after executing a trade."""
-    
+
     success: bool
     shares_bought: int = 0
     shares_sold: int = 0
@@ -82,7 +80,7 @@ class TradeResponse(BaseModel):
 
 class PositionResponse(BaseModel):
     """Response containing position information."""
-    
+
     market_id: str
     question: str
     status: str
@@ -102,7 +100,7 @@ async def list_markets(
 ) -> list[MarketResponse]:
     """
     List all prediction markets.
-    
+
     Filter by status (OPEN, CLOSED, RESOLVED) or category.
     """
     market_status = None
@@ -114,9 +112,9 @@ async def list_markets(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid status. Must be one of: {[s.name for s in MarketStatus]}",
             )
-    
+
     markets = prediction_engine.list_markets(status=market_status, category=category)
-    
+
     return [
         MarketResponse(
             id=m.id,
@@ -139,13 +137,13 @@ async def list_markets(
 async def get_market(market_id: UUID) -> MarketResponse:
     """Get details for a specific market."""
     market = prediction_engine.get_market(market_id)
-    
+
     if not market:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Market not found",
         )
-    
+
     return MarketResponse(
         id=market.id,
         question=market.question,
@@ -168,7 +166,7 @@ async def create_market(
 ) -> MarketResponse:
     """
     Create a new prediction market.
-    
+
     Currently any authenticated agent can create markets.
     In production, this would be admin-only or require stake.
     """
@@ -181,7 +179,7 @@ async def create_market(
         oracle_data=request.oracle_data,
         initial_liquidity=request.initial_liquidity,
     )
-    
+
     return MarketResponse(
         id=market.id,
         question=market.question,
@@ -204,25 +202,25 @@ async def buy_shares(
 ) -> TradeResponse:
     """
     Buy shares in a prediction market.
-    
+
     Specify outcome (yes/no) and maximum chips to spend.
     Actual cost depends on current market prices.
     """
     outcome = Outcome.YES if request.outcome == "yes" else Outcome.NO
-    
+
     result = prediction_engine.buy_shares(
         market_id=market_id,
         agent_id=agent.id,
         outcome=outcome,
         max_cost=request.max_cost,
     )
-    
+
     if not result.success:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=result.error,
         )
-    
+
     return TradeResponse(
         success=result.success,
         shares_bought=result.shares_bought,
@@ -240,7 +238,7 @@ async def sell_shares(
 ) -> TradeResponse:
     """
     Sell shares back to the market.
-    
+
     Payout depends on current market prices.
     """
     result = prediction_engine.sell_shares(
@@ -248,13 +246,13 @@ async def sell_shares(
         agent_id=agent.id,
         shares=request.shares,
     )
-    
+
     if not result.success:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=result.error,
         )
-    
+
     return TradeResponse(
         success=result.success,
         shares_sold=result.shares_sold,
@@ -270,7 +268,7 @@ async def get_my_positions(
 ) -> list[PositionResponse]:
     """Get all prediction market positions for the authenticated agent."""
     positions = prediction_engine.get_agent_positions(agent.id)
-    
+
     return [
         PositionResponse(
             market_id=p["market_id"],
@@ -294,17 +292,17 @@ async def get_quote(
 ) -> dict[str, Any]:
     """
     Get a price quote for buying shares.
-    
+
     Shows how many shares you'd get for a given chip amount.
     """
     market = prediction_engine.get_market(market_id)
-    
+
     if not market:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Market not found",
         )
-    
+
     try:
         outcome_enum = Outcome.YES if outcome.lower() == "yes" else Outcome.NO
     except ValueError:
@@ -312,11 +310,11 @@ async def get_quote(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Outcome must be 'yes' or 'no'",
         )
-    
+
     # Calculate shares for this cost
     shares = prediction_engine._calculate_shares_for_cost(market, outcome_enum, amount)
     actual_cost = market.get_buy_price(outcome_enum, shares) if shares > 0 else 0
-    
+
     return {
         "market_id": str(market_id),
         "outcome": outcome,

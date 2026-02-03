@@ -4,7 +4,6 @@ Trivia Gladiator API routes.
 Endpoints for real-time trivia competitions between agents.
 """
 
-import asyncio
 from typing import Any
 from uuid import UUID
 
@@ -14,8 +13,6 @@ from pydantic import BaseModel, Field
 from backend.core.security import get_current_agent
 from backend.db.models.agent import Agent
 from backend.game_engine.trivia import (
-    TriviaEngine,
-    TriviaMatch,
     MatchStatus,
     trivia_engine,
 )
@@ -28,7 +25,7 @@ router = APIRouter()
 
 class CreateMatchRequest(BaseModel):
     """Request to create a trivia match."""
-    
+
     entry_fee: int = Field(..., ge=1, le=10000)
     max_players: int = Field(default=8, ge=2, le=20)
     questions_count: int = Field(default=10, ge=5, le=30)
@@ -37,7 +34,7 @@ class CreateMatchRequest(BaseModel):
 
 class MatchResponse(BaseModel):
     """Response containing match information."""
-    
+
     id: UUID
     status: str
     entry_fee: int
@@ -52,13 +49,13 @@ class MatchResponse(BaseModel):
 
 class SubmitAnswerRequest(BaseModel):
     """Request to submit an answer."""
-    
+
     answer: str = Field(..., min_length=1)
 
 
 class AnswerResponse(BaseModel):
     """Response after submitting an answer."""
-    
+
     accepted: bool
     correct: bool
     response_time_ms: int
@@ -67,7 +64,7 @@ class AnswerResponse(BaseModel):
 
 class LeaderboardEntry(BaseModel):
     """A player's position on the leaderboard."""
-    
+
     agent_id: str
     display_name: str
     score: int
@@ -83,7 +80,7 @@ async def list_matches(
 ) -> list[MatchResponse]:
     """
     List all trivia matches.
-    
+
     Filter by status: WAITING, STARTING, QUESTION, REVEALING, COMPLETE
     """
     match_status = None
@@ -95,9 +92,9 @@ async def list_matches(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid status. Must be one of: {[s.name for s in MatchStatus]}",
             )
-    
+
     matches = trivia_engine.list_matches(status=match_status)
-    
+
     return [
         MatchResponse(
             id=m.id,
@@ -119,13 +116,13 @@ async def list_matches(
 async def get_match(match_id: UUID) -> dict[str, Any]:
     """Get detailed match state including current question."""
     match = trivia_engine.get_match(match_id)
-    
+
     if not match:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Match not found",
         )
-    
+
     return match.to_dict()
 
 
@@ -136,7 +133,7 @@ async def create_match(
 ) -> MatchResponse:
     """
     Create a new trivia match.
-    
+
     The creating agent automatically joins the match.
     """
     category = None
@@ -149,17 +146,17 @@ async def create_match(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid category. Must be one of: {valid}",
             )
-    
+
     match = trivia_engine.create_match(
         entry_fee=request.entry_fee,
         max_players=request.max_players,
         questions_count=request.questions_count,
         category=category,
     )
-    
+
     # Creator auto-joins
     trivia_engine.join_match(match.id, agent.id, agent.display_name)
-    
+
     return MatchResponse(
         id=match.id,
         status=match.status.name,
@@ -181,21 +178,21 @@ async def join_match(
 ) -> dict[str, Any]:
     """Join a trivia match."""
     match = trivia_engine.get_match(match_id)
-    
+
     if not match:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Match not found",
         )
-    
+
     success = trivia_engine.join_match(match_id, agent.id, agent.display_name)
-    
+
     if not success:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot join match (full, already joined, or started)",
         )
-    
+
     return {
         "success": True,
         "match_id": str(match_id),
@@ -211,13 +208,13 @@ async def leave_match(
 ) -> dict[str, Any]:
     """Leave a trivia match (only before it starts)."""
     success = trivia_engine.leave_match(match_id, agent.id)
-    
+
     if not success:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot leave match (not joined or already started)",
         )
-    
+
     return {
         "success": True,
         "message": "Left match. Entry fee refunded.",
@@ -232,32 +229,32 @@ async def start_match(
 ) -> dict[str, Any]:
     """
     Start a trivia match.
-    
+
     Requires at least 2 players. Any joined player can start.
     """
     match = trivia_engine.get_match(match_id)
-    
+
     if not match:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Match not found",
         )
-    
+
     if agent.id not in match.players:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Must be in match to start it",
         )
-    
+
     if len(match.players) < 2:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Need at least 2 players to start",
         )
-    
+
     # Start match in background
     background_tasks.add_task(trivia_engine.start_match, match_id)
-    
+
     return {
         "success": True,
         "message": "Match starting in 3 seconds...",
@@ -274,29 +271,29 @@ async def submit_answer(
 ) -> AnswerResponse:
     """
     Submit an answer to the current question.
-    
+
     First correct answer wins the round!
     """
     match = trivia_engine.get_match(match_id)
-    
+
     if not match:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Match not found",
         )
-    
+
     if agent.id not in match.players:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not in this match",
         )
-    
+
     accepted, correct, response_time_ms = trivia_engine.submit_answer(
         match_id=match_id,
         agent_id=agent.id,
         answer=request.answer,
     )
-    
+
     if not accepted:
         return AnswerResponse(
             accepted=False,
@@ -304,12 +301,12 @@ async def submit_answer(
             response_time_ms=response_time_ms,
             message="Answer not accepted (already answered, time expired, or not in question phase)",
         )
-    
+
     if correct:
         message = f"Correct! Answered in {response_time_ms}ms"
     else:
         message = f"Incorrect. Answered in {response_time_ms}ms"
-    
+
     return AnswerResponse(
         accepted=True,
         correct=correct,
@@ -322,13 +319,13 @@ async def submit_answer(
 async def get_leaderboard(match_id: UUID) -> list[LeaderboardEntry]:
     """Get the current leaderboard for a match."""
     leaderboard = trivia_engine.get_leaderboard(match_id)
-    
+
     if not leaderboard:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Match not found",
         )
-    
+
     return [
         LeaderboardEntry(
             agent_id=p["agent_id"],

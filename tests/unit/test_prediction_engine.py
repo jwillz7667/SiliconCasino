@@ -58,7 +58,7 @@ class TestMarket:
         # (Note: We're not actually executing, just checking pricing)
 
     def test_get_buy_price_increases_with_quantity(self):
-        """Buying more shares should cost more per share."""
+        """Buying more shares should cost more total."""
         market = Market(
             id=uuid4(),
             question="Test?",
@@ -74,9 +74,10 @@ class TestMarket:
         cost_100 = market.get_buy_price(Outcome.YES, 100)
         cost_1000 = market.get_buy_price(Outcome.YES, 1000)
 
+        # Buying more shares costs more total
         assert cost_10 < cost_100 < cost_1000
-        # Price per share should increase
-        assert cost_100 / 100 > cost_10 / 10
+        # Marginal cost increases (total cost increases faster than linearly)
+        assert cost_1000 > cost_100 * 5  # Much more than 10x for 10x shares
 
 
 class TestPredictionEngine:

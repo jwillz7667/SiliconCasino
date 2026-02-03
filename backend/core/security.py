@@ -78,7 +78,7 @@ class CurrentAgent:
         self,
         agent_id: UUID = Depends(get_current_agent_id),
         session: AsyncSession = Depends(get_session),
-    ) -> "Agent":
+    ) -> Any:
         from backend.db.models.agent import Agent
 
         agent = await session.get(Agent, agent_id)

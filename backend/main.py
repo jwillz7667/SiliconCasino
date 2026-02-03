@@ -4,7 +4,7 @@ from typing import Any, AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api.routes import auth, wallet, poker, predictions, spectator, stats, trivia
+from backend.api.routes import auth, poker, predictions, spectator, stats, trivia, wallet
 from backend.api.websocket.handlers import websocket_endpoint
 from backend.config import settings
 from backend.db.database import init_db

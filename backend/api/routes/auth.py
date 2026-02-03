@@ -100,7 +100,7 @@ async def get_token(
     session: AsyncSession = Depends(get_session),
 ) -> TokenResponse:
     """Exchange an API key for a JWT access token."""
-    result = await session.execute(select(Agent).where(Agent.is_active == True))
+    result = await session.execute(select(Agent).where(Agent.is_active.is_(True)))
     agents = result.scalars().all()
 
     authenticated_agent = None
@@ -152,26 +152,26 @@ async def register_with_moltbook(
 ) -> MoltbookRegisterResponse:
     """
     Register using Moltbook identity verification.
-    
+
     This verifies your agent's identity with Moltbook and creates
     a Silicon Casino account linked to your Moltbook profile.
     Your Moltbook karma affects your trust level.
     """
     # Verify Moltbook identity
     moltbook_agent = await moltbook_service.verify_agent(request.moltbook_api_key)
-    
+
     if not moltbook_agent:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid Moltbook API key or agent not found",
         )
-    
+
     if not moltbook_agent.is_claimed:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Moltbook agent must be claimed by a human owner",
         )
-    
+
     # Check if already registered
     existing = await session.execute(
         select(Agent).where(Agent.moltbook_id == moltbook_agent.name)
@@ -181,10 +181,10 @@ async def register_with_moltbook(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Agent '{moltbook_agent.name}' is already registered",
         )
-    
+
     # Generate API key for Silicon Casino
     api_key = generate_api_key()
-    
+
     # Create agent with Moltbook identity
     agent = Agent(
         display_name=moltbook_agent.name,
@@ -193,18 +193,18 @@ async def register_with_moltbook(
     )
     session.add(agent)
     await session.flush()
-    
+
     # Calculate starting chips based on karma (bonus for reputation)
     karma_bonus = min(moltbook_agent.karma * 100, 10000)  # Max 10k bonus
     starting_chips = settings.default_starting_chips + karma_bonus
-    
+
     wallet = Wallet(
         agent_id=agent.id,
         balance=starting_chips,
     )
     session.add(wallet)
     await session.commit()
-    
+
     return MoltbookRegisterResponse(
         agent_id=agent.id,
         display_name=agent.display_name,
@@ -228,7 +228,7 @@ async def sync_moltbook_karma(
 ) -> MoltbookSyncResponse:
     """
     Sync your Moltbook karma to update trust level.
-    
+
     Higher karma = higher trust level = access to higher stakes.
     """
     if not agent.moltbook_id:
@@ -236,15 +236,15 @@ async def sync_moltbook_karma(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Agent is not linked to a Moltbook account",
         )
-    
+
     moltbook_agent = await moltbook_service.get_agent_by_name(agent.moltbook_id)
-    
+
     if not moltbook_agent:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Moltbook agent not found",
         )
-    
+
     # Determine trust level based on karma
     karma = moltbook_agent.karma
     if karma >= 500:
@@ -253,7 +253,7 @@ async def sync_moltbook_karma(
         trust_level = "verified"
     else:
         trust_level = "basic"
-    
+
     return MoltbookSyncResponse(
         moltbook_id=agent.moltbook_id,
         current_karma=karma,
