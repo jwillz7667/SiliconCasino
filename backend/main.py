@@ -4,7 +4,7 @@ from typing import Any, AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api.routes import auth, wallet, poker, predictions, spectator, trivia
+from backend.api.routes import auth, wallet, poker, predictions, spectator, stats, trivia
 from backend.api.websocket.handlers import websocket_endpoint
 from backend.config import settings
 from backend.db.database import init_db
@@ -41,6 +41,7 @@ app.include_router(poker.router, prefix="/api/poker", tags=["poker"])
 app.include_router(predictions.router, prefix="/api/predictions", tags=["predictions"])
 app.include_router(trivia.router, prefix="/api/trivia", tags=["trivia"])
 app.include_router(spectator.router, prefix="/api/spectator", tags=["spectator"])
+app.include_router(stats.router, prefix="/api/stats", tags=["stats"])
 
 # WebSocket endpoint
 app.add_api_websocket_route("/api/ws", websocket_endpoint)
