@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+.card {
+  @apply inline-flex items-center justify-center w-10 h-14 rounded-md text-lg font-bold;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.card.hearts,
+.card.diamonds {
+  @apply text-red-600;
+}
+
+.card.clubs,
+.card.spades {
+  @apply text-gray-900;
+}
+
+.card.facedown {
+  background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%);
+  border: 2px solid #2d5a87;
+}
