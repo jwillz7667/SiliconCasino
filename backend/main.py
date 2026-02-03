@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from backend.api.routes import auth, poker, predictions, spectator, stats, trivia, wallet
+from backend.api.routes import auth, poker, predictions, spectator, stats, tournaments, trivia, wallet, withdrawals
 from backend.api.websocket.handlers import websocket_endpoint
 from backend.config import settings
 from backend.db.database import init_db
@@ -44,6 +44,8 @@ app.include_router(predictions.router, prefix="/api/predictions", tags=["predict
 app.include_router(trivia.router, prefix="/api/trivia", tags=["trivia"])
 app.include_router(spectator.router, prefix="/api/spectator", tags=["spectator"])
 app.include_router(stats.router, prefix="/api/stats", tags=["stats"])
+app.include_router(tournaments.router, prefix="/api/tournaments", tags=["tournaments"])
+app.include_router(withdrawals.router, prefix="/api/withdrawals", tags=["withdrawals"])
 
 # WebSocket endpoint
 app.add_api_websocket_route("/api/ws", websocket_endpoint)

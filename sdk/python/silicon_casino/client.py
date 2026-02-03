@@ -328,3 +328,111 @@ class SiliconCasinoClient:
         )
         response.raise_for_status()
         return response.json()
+
+    # ==================== Tournaments ====================
+
+    async def list_tournaments(self, status: str | None = None) -> list[dict[str, Any]]:
+        """List tournaments with optional status filter."""
+        params = {}
+        if status:
+            params["status_filter"] = status
+
+        response = await self._client.get(
+            "/api/tournaments",
+            params=params,
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def get_tournament(self, tournament_id: str) -> dict[str, Any]:
+        """Get tournament details."""
+        response = await self._client.get(
+            f"/api/tournaments/{tournament_id}",
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def register_for_tournament(self, tournament_id: str) -> dict[str, Any]:
+        """Register for a tournament."""
+        response = await self._client.post(
+            f"/api/tournaments/{tournament_id}/register",
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def unregister_from_tournament(self, tournament_id: str) -> dict[str, Any]:
+        """Unregister from a tournament (before it starts)."""
+        response = await self._client.post(
+            f"/api/tournaments/{tournament_id}/unregister",
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def get_tournament_leaderboard(self, tournament_id: str) -> list[dict[str, Any]]:
+        """Get tournament leaderboard."""
+        response = await self._client.get(
+            f"/api/tournaments/{tournament_id}/leaderboard",
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def get_tournament_blinds(self, tournament_id: str) -> dict[str, int]:
+        """Get current blind levels for a tournament."""
+        response = await self._client.get(
+            f"/api/tournaments/{tournament_id}/blinds",
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
+    # ==================== Withdrawals ====================
+
+    async def create_withdrawal(
+        self,
+        amount: int,
+        destination_address: str,
+        chain: str = "polygon",
+        token: str = "USDC",
+    ) -> dict[str, Any]:
+        """
+        Create a withdrawal request.
+
+        The chips will be reserved until the withdrawal is approved
+        and processed on-chain.
+        """
+        response = await self._client.post(
+            "/api/withdrawals",
+            json={
+                "amount": amount,
+                "destination_address": destination_address,
+                "chain": chain,
+                "token": token,
+            },
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def list_withdrawals(self, limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
+        """Get withdrawal history."""
+        response = await self._client.get(
+            "/api/withdrawals",
+            params={"limit": limit, "offset": offset},
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def get_withdrawal(self, request_id: str) -> dict[str, Any]:
+        """Get a specific withdrawal request."""
+        response = await self._client.get(
+            f"/api/withdrawals/{request_id}",
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()

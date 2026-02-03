@@ -196,11 +196,20 @@ class BettingState:
 
     def _is_round_complete(self) -> bool:
         """Check if the betting round is complete."""
+        # Active players can still make decisions
         active_players = [p for p in self.players.values() if p.is_active]
+        # Non-folded players are still in the hand (includes all-in players)
+        non_folded_players = [p for p in self.players.values() if not p.is_folded]
 
-        if len(active_players) <= 1:
+        # If only one player remains (everyone else folded), round is complete
+        if len(non_folded_players) <= 1:
             return True
 
+        # If no one can act (everyone is all-in or folded), round is complete
+        if len(active_players) == 0:
+            return True
+
+        # Check that all active players have acted and matched the current bet
         for player in active_players:
             if not player.has_acted:
                 return False

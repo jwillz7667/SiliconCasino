@@ -34,6 +34,16 @@ class HandResult:
     winners: list[dict[str, Any]]
     pot_distribution: dict[int, int]
     showdown_hands: dict[int, dict[str, Any]] | None = None
+    rake_collected: int = 0
+
+
+@dataclass
+class RakeConfig:
+    """Configuration for rake collection."""
+
+    percentage: float = 0.05  # 5% rake
+    cap: int = 500  # Maximum rake per hand
+    threshold: int = 100  # Minimum pot to collect rake
 
 
 @dataclass
@@ -51,6 +61,7 @@ class HandState:
     started_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     events: list[dict[str, Any]] = field(default_factory=list)
     hole_cards: dict[int, list[Card]] = field(default_factory=dict)
+    rake_collected: int = 0
 
     def to_public_dict(self, for_seat: int | None = None) -> dict[str, Any]:
         """Return public hand state, optionally including hole cards for a specific seat."""
@@ -87,15 +98,35 @@ class HandState:
 class PokerEngine:
     """Main poker game engine that manages hands."""
 
-    def __init__(self, table_config: TableConfig, seed: int | None = None):
+    def __init__(
+        self,
+        table_config: TableConfig,
+        seed: int | None = None,
+        rake_config: RakeConfig | None = None,
+    ):
         self.table = TableState(config=table_config)
         self._seed = seed
+        self._rake_config = rake_config or RakeConfig()
         self._current_hand: HandState | None = None
         self._event_sequence = 0
+        self._total_rake_collected: int = 0  # Track total rake for the session
+
+    def _calculate_rake(self, pot: int) -> int:
+        """Calculate rake to collect from the pot."""
+        if pot < self._rake_config.threshold:
+            return 0
+
+        rake = int(pot * self._rake_config.percentage)
+        return min(rake, self._rake_config.cap)
 
     @property
     def current_hand(self) -> HandState | None:
         return self._current_hand
+
+    @property
+    def total_rake_collected(self) -> int:
+        """Get total rake collected during this session."""
+        return self._total_rake_collected
 
     def seat_player(self, agent_id: UUID, seat_number: int, buy_in: int) -> bool:
         """Seat a player at the table."""
@@ -197,6 +228,7 @@ class PokerEngine:
         sb_player.bet_this_round = sb_amount
         sb_player.total_bet_this_hand = sb_amount
         hand.pot += sb_amount
+        betting.pot += sb_amount  # Sync betting pot with blinds
         self.table.seats[sb_seat].stack -= sb_amount
 
         bb_player = betting.players[bb_seat]
@@ -204,6 +236,7 @@ class PokerEngine:
         bb_player.bet_this_round = bb_amount
         bb_player.total_bet_this_hand = bb_amount
         hand.pot += bb_amount
+        betting.pot += bb_amount  # Sync betting pot with blinds
         self.table.seats[bb_seat].stack -= bb_amount
 
         betting.current_bet = bb_amount
@@ -272,10 +305,13 @@ class PokerEngine:
         if round_complete:
             return self._advance_to_next_phase()
 
-        betting.action_on = betting.get_next_to_act(
+        # Get next player to act - use explicit None check since seat 0 is valid
+        next_to_act = betting.get_next_to_act(
             self.table.button_position,
             self.table.config.max_players,
-        ) or betting.action_on
+        )
+        if next_to_act is not None:
+            betting.action_on = next_to_act
 
         return True
 
@@ -383,7 +419,13 @@ class PokerEngine:
             return True
 
         winner_seat, winner_state = active_players[0]
-        pot_won = hand.betting.pot
+        total_pot = hand.betting.pot
+
+        # Calculate and collect rake
+        rake = self._calculate_rake(total_pot)
+        pot_won = total_pot - rake
+        hand.rake_collected = rake
+        self._total_rake_collected += rake
 
         self.table.seats[winner_seat].stack += pot_won
 
@@ -396,12 +438,14 @@ class PokerEngine:
                 "reason": "everyone_folded",
             }],
             pot_distribution={winner_seat: pot_won},
+            rake_collected=rake,
         )
 
         self._add_event("hand_complete", None, {
             "result": "fold_win",
             "winner_seat": winner_seat,
             "pot": pot_won,
+            "rake": rake,
         })
 
         self._complete_hand(result)
@@ -441,7 +485,14 @@ class PokerEngine:
         best_score = evaluations[0][2].score
         winners = [(seat, agent_id, eval_) for seat, agent_id, eval_ in evaluations if eval_.score == best_score]
 
-        pot = hand.betting.pot
+        total_pot = hand.betting.pot
+
+        # Calculate and collect rake
+        rake = self._calculate_rake(total_pot)
+        pot = total_pot - rake
+        hand.rake_collected = rake
+        self._total_rake_collected += rake
+
         share = pot // len(winners)
         remainder = pot % len(winners)
 
@@ -464,11 +515,13 @@ class PokerEngine:
             winners=result_winners,
             pot_distribution=pot_distribution,
             showdown_hands=showdown_hands,
+            rake_collected=rake,
         )
 
         self._add_event("showdown", None, {
             "hands": showdown_hands,
             "winners": result_winners,
+            "rake": rake,
         })
 
         self._complete_hand(result)

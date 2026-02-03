@@ -189,7 +189,9 @@ class TestFullHand:
         assert total_stacks == 1000
 
     def test_play_hand_all_in(self, table_config):
-        engine = PokerEngine(table_config, seed=42)
+        # Use RakeConfig with 0 rake to test without rake interference
+        from backend.game_engine.poker.engine import RakeConfig
+        engine = PokerEngine(table_config, seed=42, rake_config=RakeConfig(percentage=0))
         agent1 = uuid4()
         agent2 = uuid4()
         engine.seat_player(agent1, 0, 100)
@@ -208,4 +210,4 @@ class TestFullHand:
         assert engine.current_hand is None
 
         total_stacks = sum(s.stack for s in engine.table.seats.values() if s.agent_id)
-        assert total_stacks == 200
+        assert total_stacks == 200  # All chips conserved (no rake)

@@ -70,7 +70,12 @@ class HandEvaluator:
     def _score_to_rank(self, score: int) -> HandRank:
         """Convert treys score to HandRank."""
         rank_class = self._evaluator.get_rank_class(score)
+        # Treys rank classes are 0-indexed:
+        # 0 = Royal Flush (special case of Straight Flush with score=1)
+        # 1 = Straight Flush
+        # 2 = Four of a Kind, etc.
         mapping = {
+            0: HandRank.STRAIGHT_FLUSH,  # Will be upgraded to Royal Flush if score == 1
             1: HandRank.STRAIGHT_FLUSH,
             2: HandRank.FOUR_OF_A_KIND,
             3: HandRank.FULL_HOUSE,
@@ -82,6 +87,7 @@ class HandEvaluator:
             9: HandRank.HIGH_CARD,
         }
         rank = mapping.get(rank_class, HandRank.HIGH_CARD)
+        # Royal Flush is a Straight Flush with the best possible score (1)
         if rank == HandRank.STRAIGHT_FLUSH and score == 1:
             return HandRank.ROYAL_FLUSH
         return rank
