@@ -4,16 +4,19 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api.routes import auth, wallet, poker
+from backend.api.routes import auth, wallet, poker, predictions, spectator
 from backend.api.websocket.handlers import websocket_endpoint
 from backend.config import settings
 from backend.db.database import init_db
+from backend.services.spectator import spectator_manager
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await init_db()
+    await spectator_manager.start()
     yield
+    await spectator_manager.stop()
 
 
 app = FastAPI(
@@ -35,6 +38,8 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(wallet.router, prefix="/api/wallet", tags=["wallet"])
 app.include_router(poker.router, prefix="/api/poker", tags=["poker"])
+app.include_router(predictions.router, prefix="/api/predictions", tags=["predictions"])
+app.include_router(spectator.router, prefix="/api/spectator", tags=["spectator"])
 
 # WebSocket endpoint
 app.add_api_websocket_route("/api/ws", websocket_endpoint)
