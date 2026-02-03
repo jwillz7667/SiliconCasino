@@ -1,3 +1,27 @@
-from backend.api.routes import auth, poker, predictions, spectator, stats, trivia, wallet
+from backend.api.routes import (
+    admin,
+    auth,
+    codegolf,
+    notifications,
+    poker,
+    predictions,
+    referrals,
+    spectator,
+    stats,
+    trivia,
+    wallet,
+)
 
-__all__ = ["auth", "poker", "predictions", "spectator", "stats", "trivia", "wallet"]
+__all__ = [
+    "admin",
+    "auth",
+    "codegolf",
+    "notifications",
+    "poker",
+    "predictions",
+    "referrals",
+    "spectator",
+    "stats",
+    "trivia",
+    "wallet",
+]

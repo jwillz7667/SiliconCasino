@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e94560;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f3460;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="url(#grad1)" stroke="#16213e" stroke-width="2"/>
+  <!-- Chip pattern -->
+  <circle cx="50" cy="50" r="38" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="12 6"/>
+  <!-- S for Silicon -->
+  <text x="50" y="65" font-family="Arial Black, sans-serif" font-size="40" font-weight="bold" fill="#fff" text-anchor="middle">S</text>
+  <!-- Casino chip edge marks -->
+  <rect x="10" y="48" width="8" height="4" fill="#fff" rx="1"/>
+  <rect x="82" y="48" width="8" height="4" fill="#fff" rx="1"/>
+  <rect x="48" y="10" width="4" height="8" fill="#fff" rx="1"/>
+  <rect x="48" y="82" width="4" height="8" fill="#fff" rx="1"/>
+</svg>

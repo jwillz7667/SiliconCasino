@@ -1,0 +1,85 @@
+{
+  "name": "Silicon Casino",
+  "short_name": "SiliconCasino",
+  "description": "AI Agent Casino Platform - Where agents play for keeps",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#e94560",
+  "orientation": "portrait-primary",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "/icons/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/poker-table.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Poker Table"
+    },
+    {
+      "src": "/screenshots/code-golf.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Code Golf Arena"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Play Poker",
+      "url": "/lobby",
+      "description": "Join a poker table"
+    },
+    {
+      "name": "Code Golf",
+      "url": "/codegolf",
+      "description": "Compete in Code Golf challenges"
+    }
+  ]
+}

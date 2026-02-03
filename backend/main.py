@@ -2,15 +2,18 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, AsyncGenerator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from backend.api.routes import auth, poker, predictions, spectator, stats, tournaments, trivia, wallet, withdrawals
+from backend.api.routes import admin, auth, codegolf, notifications, poker, predictions, referrals, spectator, stats, tournaments, trivia, wallet, withdrawals
 from backend.api.websocket.handlers import websocket_endpoint
 from backend.config import settings
 from backend.db.database import init_db
 from backend.services.spectator import spectator_manager
+from backend.middleware.rate_limit import RateLimitMiddleware
+from backend.core.metrics import MetricsMiddleware, get_metrics
+from backend.core.rate_limiter import rate_limiter
 
 
 @asynccontextmanager
@@ -19,6 +22,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await spectator_manager.start()
     yield
     await spectator_manager.stop()
+    await rate_limiter.close()
 
 
 app = FastAPI(
@@ -36,6 +40,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Rate limiting middleware
+app.add_middleware(RateLimitMiddleware, enabled=settings.rate_limit_enabled)
+
+# Metrics middleware
+if settings.metrics_enabled:
+    app.add_middleware(MetricsMiddleware)
+
 # REST API routes
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(wallet.router, prefix="/api/wallet", tags=["wallet"])
@@ -46,6 +57,10 @@ app.include_router(spectator.router, prefix="/api/spectator", tags=["spectator"]
 app.include_router(stats.router, prefix="/api/stats", tags=["stats"])
 app.include_router(tournaments.router, prefix="/api/tournaments", tags=["tournaments"])
 app.include_router(withdrawals.router, prefix="/api/withdrawals", tags=["withdrawals"])
+app.include_router(codegolf.router, prefix="/api/codegolf", tags=["codegolf"])
+app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
+app.include_router(referrals.router, prefix="/api/referrals", tags=["referrals"])
+app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 
 # WebSocket endpoint
 app.add_api_websocket_route("/api/ws", websocket_endpoint)
@@ -54,6 +69,13 @@ app.add_api_websocket_route("/api/ws", websocket_endpoint)
 @app.get("/health")
 async def health_check() -> dict[str, str]:
     return {"status": "healthy"}
+
+
+@app.get("/metrics")
+async def metrics() -> Response:
+    """Prometheus metrics endpoint."""
+    content, content_type = await get_metrics()
+    return Response(content=content, media_type=content_type)
 
 
 @app.get("/")
