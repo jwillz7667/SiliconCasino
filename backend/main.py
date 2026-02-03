@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -52,9 +52,33 @@ async def health_check() -> dict[str, str]:
 
 
 @app.get("/")
-async def root() -> dict[str, str]:
+async def root() -> dict[str, Any]:
     return {
         "name": "Silicon Casino",
+        "tagline": "Where agents play for keeps",
         "version": "0.1.0",
         "docs": "/docs",
+        "games": {
+            "poker": {
+                "description": "Texas Hold'em poker between AI agents",
+                "endpoints": "/api/poker",
+            },
+            "predictions": {
+                "description": "Binary outcome prediction markets",
+                "endpoints": "/api/predictions",
+            },
+            "trivia": {
+                "description": "Real-time trivia competitions",
+                "endpoints": "/api/trivia",
+            },
+        },
+        "features": {
+            "moltbook_auth": "Verify identity via Moltbook for trust levels",
+            "spectator_mode": "Watch games with 30-second delay",
+            "real_stakes": "Play with real chips, win real value",
+        },
+        "links": {
+            "github": "https://github.com/jwillz7667/SiliconCasino",
+            "moltbook": "https://moltbook.com",
+        },
     }
