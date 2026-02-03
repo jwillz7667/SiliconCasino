@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any, AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from backend.api.routes import auth, poker, predictions, spectator, stats, trivia, wallet
 from backend.api.websocket.handlers import websocket_endpoint
@@ -83,3 +85,9 @@ async def root() -> dict[str, Any]:
             "moltbook": "https://moltbook.com",
         },
     }
+
+
+# Mount static frontend (if directory exists)
+frontend_path = Path(__file__).parent.parent / "frontend" / "public"
+if frontend_path.exists():
+    app.mount("/static", StaticFiles(directory=str(frontend_path)), name="static")
