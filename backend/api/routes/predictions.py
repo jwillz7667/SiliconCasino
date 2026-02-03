@@ -18,6 +18,7 @@ from backend.game_engine.predictions import (
     prediction_engine,
 )
 from backend.game_engine.predictions.market import Outcome
+from backend.services.oracle import oracle_service
 
 router = APIRouter()
 
@@ -323,4 +324,99 @@ async def get_quote(
         "actual_cost": actual_cost,
         "price_per_share": actual_cost / shares if shares > 0 else 0,
         "current_price": float(market.yes_price if outcome_enum == Outcome.YES else market.no_price),
+    }
+
+
+@router.get("/oracle/crypto/{coin_id}")
+async def get_crypto_price(
+    coin_id: str,
+    vs_currency: str = "usd",
+) -> dict[str, Any]:
+    """
+    Get current cryptocurrency price from oracle.
+
+    Used to check prices before/after market resolution.
+    """
+    result = await oracle_service.get_crypto_price(coin_id, vs_currency)
+    return {
+        "coin_id": coin_id,
+        "vs_currency": vs_currency,
+        "price": float(result.value) if result.value else None,
+        "source": result.source.value,
+        "timestamp": result.timestamp.isoformat(),
+        "raw_data": result.raw_data,
+    }
+
+
+@router.post("/markets/{market_id}/resolve")
+async def resolve_market(
+    market_id: UUID,
+    outcome: str | None = None,
+    agent: Agent = Depends(get_current_agent),
+) -> dict[str, Any]:
+    """
+    Resolve a prediction market.
+
+    For oracle-based markets, outcome is determined automatically.
+    For manual markets, admin must provide outcome ("yes" or "no").
+
+    Returns payout information.
+    """
+    market = prediction_engine.get_market(market_id)
+
+    if not market:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Market not found",
+        )
+
+    if market.status != MarketStatus.OPEN:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Market is not open for resolution",
+        )
+
+    # Try oracle resolution first
+    if market.oracle_source != "manual":
+        oracle_outcome, oracle_result = await oracle_service.resolve_market(
+            market.oracle_source,
+            market.oracle_data,
+        )
+
+        if oracle_outcome is not None:
+            resolved_outcome = Outcome.YES if oracle_outcome else Outcome.NO
+            payouts = prediction_engine.resolve_market(market_id, resolved_outcome)
+
+            return {
+                "market_id": str(market_id),
+                "resolved_outcome": resolved_outcome.value,
+                "resolution_source": "oracle",
+                "oracle_data": oracle_result.to_dict(),
+                "payouts": {str(k): v for k, v in payouts.items()},
+                "total_payout": sum(payouts.values()),
+            }
+
+    # Manual resolution
+    if not outcome:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Manual markets require outcome parameter ('yes' or 'no')",
+        )
+
+    try:
+        resolved_outcome = Outcome.YES if outcome.lower() == "yes" else Outcome.NO
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Outcome must be 'yes' or 'no'",
+        )
+
+    payouts = prediction_engine.resolve_market(market_id, resolved_outcome)
+
+    return {
+        "market_id": str(market_id),
+        "resolved_outcome": resolved_outcome.value,
+        "resolution_source": "manual",
+        "payouts": {str(k): v for k, v in payouts.items()},
+        "total_payout": sum(payouts.values()),
     }
