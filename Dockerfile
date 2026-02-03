@@ -19,9 +19,9 @@ RUN pip install poetry
 # Copy dependency files first (for layer caching)
 COPY pyproject.toml poetry.lock* ./
 
-# Install Python dependencies (exclude dev)
+# Install Python dependencies (exclude dev, skip installing project itself)
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi --without dev
+    && poetry install --no-interaction --no-ansi --without dev --no-root
 
 # Copy application code
 COPY backend/ ./backend/
